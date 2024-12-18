@@ -7,12 +7,58 @@ const resources = {
     translation: {
       welcome: "Welcome to Expo Router!",
       clickMe: "Click Me",
+      login: {
+        title: "Login",
+        email: "Email Address",
+        password: "Password",
+        button: "Sign In",
+        registerLink: "Create an account",
+        success: "Login successful!",
+        error: "Login error",
+      },
+      register: {
+        title: "Register",
+        email: "Email Address",
+        password: "Password",
+        button: "Sign Up",
+        loginLink: "Back to login",
+        success: "Registration successful!",
+        error: "Registration error",
+      },
+      logout: {
+        button: "Log Out",
+        success: "You have successfully logged out.",
+        error: "Error during logout.",
+      },
     },
   },
   fr: {
     translation: {
       welcome: "Bienvenue sur Expo Router !",
       clickMe: "Cliquez-moi",
+      login: {
+        title: "Connexion",
+        email: "Adresse e-mail",
+        password: "Mot de passe",
+        button: "Se connecter",
+        registerLink: "Créer un compte",
+        success: "Connexion réussie !",
+        error: "Erreur de connexion",
+      },
+      register: {
+        title: "Inscription",
+        email: "Adresse e-mail",
+        password: "Mot de passe",
+        button: "S'inscrire",
+        loginLink: "Retour à la connexion",
+        success: "Inscription réussie !",
+        error: "Erreur d'inscription",
+      },
+      logout: {
+        button: "Déconnexion",
+        success: "Vous avez été déconnecté avec succès.",
+        error: "Erreur lors de la déconnexion.",
+      },
     },
   },
 };
@@ -22,7 +68,7 @@ i18n.use(initReactI18next).init({
   lng: Localization.locale.split('-')[0], // Langue détectée
   fallbackLng: 'en',
   interpolation: {
-    escapeValue: false,
+    escapeValue: false, // Pas besoin d'échapper dans React
   },
 });
 
