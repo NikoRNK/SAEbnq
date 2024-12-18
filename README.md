@@ -1,50 +1,90 @@
-# Welcome to your Expo app 👋
+# Projet Expo avec Backend Stream Chat
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Ce projet est une application React Native basée sur Expo, intégrant un backend déployé sur Vercel pour la gestion des tokens Stream Chat.
 
-## Get started
+## 🚀 Fonctionnalités
 
-1. Install dependencies
+- **Chat en Temps Réel** avec [Stream Chat](https://getstream.io/chat/).
+- **Gestion des Tokens Sécurisés** via un backend Express déployé sur Vercel.
+- **Envoi d'Images** avec Firebase Storage.
+- **Connexion et Inscription** avec Firebase Authentication.
+
+## ⚙️ Installation et Lancement
+
+### Prérequis
+
+- [Node.js](https://nodejs.org/)
+- [Expo CLI](https://docs.expo.dev/)
+- [Git](https://git-scm.com/)
+- Un compte [Stream Chat](https://getstream.io/)
+
+### Étapes
+
+1. Clonez ce dépôt :
+
+   ```bash
+   git clone https://github.com/NikoRNK/SAEbnq
+   cd REPO
+   ```
+
+2. Installez les dépendances du frontend :
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. Installez les dépendances du backend :
 
    ```bash
-    npx expo start
+   cd backend
+   npm install
+   cd ..
    ```
 
-In the output, you'll find options to open the app in a
+4. Configurez vos clés dans les fichiers suivants :
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   - Créer un fichier ./.env pour Firebase
+   - `Sur Vercel configurer les variables d'environnements` pour Stream Chat :
+     ```
+     STREAM_API_KEY=YOUR_STREAM_API_KEY
+     STREAM_API_SECRET=YOUR_STREAM_API_SECRET
+     ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+5. Déployez le backend sur Vercel :
 
-## Get a fresh project
+   ```bash
+   cd backend
+   vercel login
+   vercel --prod
+   ```
 
-When you're ready, run:
+6. Lancez l'application Expo :
 
-```bash
-npm run reset-project
-```
+   ```bash
+   expo start
+   ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🌐 Déploiement
 
-## Learn more
+- **Backend :** Déployé sur [Vercel](https://vercel.com/).
+- **Frontend :** Fonctionne avec Expo Go.
 
-To learn more about developing your project with Expo, look at the following resources:
+## 📚 Documentation
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- [Expo Documentation](https://docs.expo.dev/)
+- [Stream Chat Documentation](https://getstream.io/chat/docs/)
+- [Firebase Documentation](https://firebase.google.com/docs)
 
-## Join the community
+## 🔧 Auteur
 
-Join our community of developers creating universal apps.
+- **Nom :** Yann DCS
+- **Email :** [dcs.yann@gmail.com](mailto\:dcs.yann@gmail.com)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+### 🖋️ TODO
+
+- Ajouter la gestion des notifications push.
+- Améliorer le design avec des composants personnalisés.
+- Ajouter des tests unitaires.
+
