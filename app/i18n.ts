@@ -18,12 +18,15 @@ const resources = {
       },
       register: {
         title: "Register",
+        username: "Username",
         email: "Email Address",
         password: "Password",
         button: "Sign Up",
         loginLink: "Back to login",
         success: "Registration successful!",
         error: "Registration error",
+        usernameRequired: "Username is required.",
+        usernameError: "Username error"
       },
       logout: {
         button: "Log Out",
@@ -47,12 +50,15 @@ const resources = {
       },
       register: {
         title: "Inscription",
+        username: "Nom d'utilisateur",
         email: "Adresse e-mail",
         password: "Mot de passe",
         button: "S'inscrire",
         loginLink: "Retour à la connexion",
         success: "Inscription réussie !",
         error: "Erreur d'inscription",
+        usernameRequired: "Le nom d'utilisateur est requis.",
+        usernameError: "Erreur de nom d'utilisateur"
       },
       logout: {
         button: "Déconnexion",

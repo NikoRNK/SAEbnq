@@ -1,0 +1,20 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "index.js",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/api/.*",
+        "methods": ["POST"],
+        "dest": "/api/index.js",
+        "headers": {
+            "cache-control": "no-cache"
+        }
+      }
+    ]
+  }
+  
