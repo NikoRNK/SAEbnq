@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { GiftedChat, IMessage } from 'react-native-gifted-chat';
 import { useRouter } from 'expo-router';
-import { Text, View, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebaseConfig'; // Assurez-vous que ce chemin est correct
@@ -65,7 +65,7 @@ export default function ChatScreen() {
               user: {
                 _id: msg.user.id,
                 name: msg.user.name,
-                avatar: msg.user.image,
+                avatar: msg.image,
               },
               image: msg.image || undefined,
             }))

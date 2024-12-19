@@ -8,7 +8,6 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { doc, getDoc } from 'firebase/firestore';
 import client from '../streamConfig';
-import { fetch } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -29,23 +28,6 @@ export default function LoginScreen() {
         throw new Error('Données utilisateur non trouvées dans Firestore');
       }
       const userData = userDoc.data();
-
-      // Obtenir un token Stream depuis le backend
-      const response = await fetch('https://us-central1-your-project.cloudfunctions.net/generateStreamToken', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user.uid }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Échec de la récupération du token Stream');
-      }
-
-      const data = await response.json();
-      const token = data.token;
-      console.log('Token Stream reçu:', token);
 
       // Connecter l'utilisateur avec le token sécurisé
       await client.connectUser(
