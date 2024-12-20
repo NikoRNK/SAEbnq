@@ -1,35 +1,45 @@
-// app/login.tsx
-
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../firebaseConfig';
+import { auth, db } from '@/firebaseConfig';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { doc, getDoc } from 'firebase/firestore';
-import client from '../streamConfig';
+import { fetchStreamToken } from '@/utils/stream'; // Fonction utilitaire pour récupérer le token
+import { useAuth } from '@/contexts/AuthContext';
+import { client } from '@/streamConfig';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
-  const { t } = useTranslation();
+  const { login } = useAuth(); // Utilisation du contexte pour gérer l'état global
 
   const handleLogin = async () => {
     try {
-      // Authentifier l'utilisateur avec email et mot de passe
+      // Vérifiez si le client est initialisé avant de déconnecter
+      if (client && client.user) {
+        console.log('Déconnexion de l\'utilisateur précédent...');
+        await client.disconnectUser();
+      } else {
+        console.log('Aucun utilisateur connecté sur le client Stream.');
+      }
+  
+      // Authentifier l'utilisateur avec Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log('Utilisateur connecté:', user);
-
+  
       // Récupérer les données utilisateur depuis Firestore
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (!userDoc.exists()) {
         throw new Error('Données utilisateur non trouvées dans Firestore');
       }
       const userData = userDoc.data();
-
-      // Connecter l'utilisateur avec le token sécurisé
+  
+      // Récupérer le token Stream
+      const token = await fetchStreamToken(user.uid);
+      console.log(token);
+  
+      // Connecter l'utilisateur à GetStream
       await client.connectUser(
         {
           id: user.uid,
@@ -38,15 +48,17 @@ export default function LoginScreen() {
         },
         token
       );
-      console.log('Utilisateur connecté à Stream');
-
+  
+      // Mettre à jour le contexte utilisateur
+      login({ ...userData, uid: user.uid }, token);
+  
       Alert.alert('Succès', 'Connexion réussie');
       router.replace('/(tabs)');
     } catch (error: any) {
       console.error('Erreur de connexion:', error);
       Alert.alert('Erreur', error.message);
     }
-  };
+  };  
 
   return (
     <View style={styles.container}>

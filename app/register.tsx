@@ -1,21 +1,18 @@
-// app/register.tsx
-
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../firebaseConfig';
+import { auth, db } from '@/firebaseConfig';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { doc, setDoc } from 'firebase/firestore';
-import client from '../streamConfig';
-import { fetch } from 'react-native';
+import { fetchStreamToken } from '@/utils/stream';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const router = useRouter();
-  const { t } = useTranslation();
+  const { login } = useAuth();
 
   const handleRegister = async () => {
     if (!username.trim()) {
@@ -24,46 +21,22 @@ export default function RegisterScreen() {
     }
 
     try {
-      // Créer l'utilisateur avec email et mot de passe
+      // Créer un utilisateur avec Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log('Utilisateur enregistré:', user);
 
-      // Stocker le nom d'utilisateur dans Firestore
+      // Stocker les données utilisateur dans Firestore
       await setDoc(doc(db, 'users', user.uid), {
         username: username.trim(),
         email: email.trim(),
         createdAt: new Date(),
       });
-      console.log('Données utilisateur stockées dans Firestore');
 
-      // Obtenir un token Stream depuis le backend
-      const response = await fetch('https://us-central1-your-project.cloudfunctions.net/generateStreamToken', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: user.uid }),
-      });
+      // Récupérer le token Stream
+      const token = await fetchStreamToken(user.uid);
 
-      if (!response.ok) {
-        throw new Error('Échec de la récupération du token Stream');
-      }
-
-      const data = await response.json();
-      const token = data.token;
-      console.log('Token Stream reçu:', token);
-
-      // Connecter l'utilisateur avec le token sécurisé
-      await client.connectUser(
-        {
-          id: user.uid,
-          name: username.trim(),
-          image: `https://getstream.io/random_svg/?id=${user.uid}&name=${username.trim()}`,
-        },
-        token
-      );
-      console.log('Utilisateur connecté à Stream');
+      // Mettre à jour le contexte avec l'utilisateur et le token
+      login({ username: username.trim(), email: email.trim(), uid: user.uid }, token);
 
       Alert.alert('Succès', 'Inscription réussie');
       router.replace('/(tabs)');

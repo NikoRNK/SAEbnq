@@ -1,20 +1,23 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { GiftedChat, IMessage } from 'react-native-gifted-chat';
 import { useRouter } from 'expo-router';
-import { Text, View, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator, Platform } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator, useColorScheme } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebaseConfig'; // Assurez-vous que ce chemin est correct
 import axios from 'axios';
-import client from '../../streamConfig';
+import { client } from '../../streamConfig';
 import uuid from 'react-native-uuid';
 import { useAuth } from '@/contexts/AuthContext';
+import { Colors } from '@/constants/Colors';
 
 export default function ChatScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [channel, setChannel] = useState<any>(null); // Référence au canal Stream Chat
+  const colorScheme = useColorScheme(); // Renvoie "light" ou "dark"
+  const colors = Colors[colorScheme ?? 'light'];
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -58,7 +61,9 @@ export default function ChatScreen() {
 
           // Charger les messages existants
           setMessages(
-            newChannel.state.messages.map((msg) => ({
+            newChannel.state.messages
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) // Trier par date ascendante
+              .map((msg) => ({
               _id: msg.id,
               text: msg.text,
               createdAt: new Date(msg.created_at),
@@ -182,31 +187,31 @@ export default function ChatScreen() {
   }
 
   return (
-    <GiftedChat
-      messages={messages}
-      onSend={(newMessages) => onSend(newMessages)}
-      user={{
-        _id: user.uid,
-        name: user.username,
-        avatar: `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
-      }}
-      renderUsernameOnMessage
-      renderActions={() => (
-        <TouchableOpacity onPress={pickImage} style={{ marginLeft: 10 }}>
-          <Image
-            source={require('../../assets/images/icon.png')}
-            style={{ width: 30, height: 30 }}
-          />
-        </TouchableOpacity>
-      )}
-    />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <GiftedChat
+        messages={messages}
+        onSend={(newMessages) => onSend(newMessages)}
+        user={{
+          _id: user.uid,
+          name: user.username,
+          avatar: `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
+        }}
+        renderUsernameOnMessage
+        renderActions={() => (
+          <TouchableOpacity onPress={pickImage} style={{ marginLeft: 10 }}>
+            <Image
+              source={require('../../assets/images/icon.png')}
+              style={{ width: 30, height: 30 }}
+            />
+          </TouchableOpacity>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

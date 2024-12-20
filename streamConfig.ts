@@ -7,7 +7,4 @@ if (!STREAM_API_KEY) {
   throw new Error('STREAM_API_KEY n\'est pas défini dans les variables d\'environnement.');
 }
 
-// Initialisation du client Stream Chat
-const client = StreamChat.getInstance(STREAM_API_KEY);
-
-export default client;
+export const client = StreamChat.getInstance(STREAM_API_KEY);

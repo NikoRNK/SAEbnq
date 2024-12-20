@@ -5,6 +5,7 @@ import { useColorScheme } from '@/hooks/useColorScheme'; // Import du hook pour 
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
 import { useRouter } from 'expo-router';
+import { client } from '@/streamConfig';
 
 export default function Porfile() {
   const { t, i18n } = useTranslation();
@@ -18,6 +19,7 @@ export default function Porfile() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      await client.disconnectUser();
       Alert.alert(t('logout.success'));
       router.replace('/login'); // Redirige vers la page de connexion
     } catch (error: any) {
