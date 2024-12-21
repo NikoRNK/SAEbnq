@@ -37,7 +37,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const userData = userDoc.data();
 
             // Récupérer le token Stream
-            const streamToken = await fetchStreamToken(firebaseUser.uid);
+            let streamToken: string | undefined;
+            try {
+              streamToken = await fetchStreamToken(firebaseUser.uid);
+            } catch (tokenError) {
+              console.error('Erreur lors de la récupération du token Stream :', tokenError);
+            }
 
             // Mettre à jour l'utilisateur avec toutes les informations
             setUser({

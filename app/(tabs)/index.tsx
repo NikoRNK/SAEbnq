@@ -6,13 +6,18 @@ import { db } from '@/firebaseConfig';
 import { getDoc, doc } from 'firebase/firestore';
 import { client } from '@/streamConfig';
 import { fetchStreamToken } from '@/utils/stream';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 export default function Home() {
-  const { user, login } = useAuth(); // Récupère `login` pour mettre à jour le contexte
+  const { user, login } = useAuth();
   const [friends, setFriends] = useState([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const currentColors = Colors[colorScheme || 'light'];
 
-  // Charger les amis depuis Firestore
   useEffect(() => {
     const fetchFriends = async () => {
       if (!user) return;
@@ -28,6 +33,34 @@ export default function Home() {
           const friendsDocs = await Promise.all(friendsPromises);
           const friendsList = friendsDocs.map((doc) => ({ id: doc.id, ...doc.data() }));
           setFriends(friendsList);
+
+          // Vérifiez ou connectez l'utilisateur à GetStream
+          if (!user.streamToken) {
+            console.log('Aucun token Stream trouvé. Récupération d\'un nouveau token...');
+            const newToken = await fetchStreamToken(user.uid);
+            login({ ...user, streamToken: newToken });
+          }
+
+          if (!client.user) {
+            await client.connectUser(
+              {
+                id: user.uid,
+                name: user.username,
+                image: `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
+              },
+              user.streamToken
+            );
+          }
+
+          // Récupérer les messages non lus pour chaque ami
+          const unreadCountsTemp: Record<string, number> = {};
+          for (const friend of friendsList) {
+            const channelId = [user.uid, friend.id].sort().join('-');
+            const channel = client.channel('messaging', channelId);
+            await channel.watch();
+            unreadCountsTemp[friend.id] = channel.countUnread();
+          }
+          setUnreadCounts(unreadCountsTemp);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des amis :', error);
@@ -37,82 +70,79 @@ export default function Home() {
     fetchFriends();
   }, [user]);
 
-  // Vérifier ou créer un canal entre deux utilisateurs
   const handleChat = async (friend: any) => {
     if (!user) return;
 
     try {
-      // Vérifier si un token est disponible
-      if (!user.streamToken) {
-        console.log('Aucun token Stream trouvé. Récupération d\'un nouveau token...');
-        const newToken = await fetchStreamToken(user.uid);
-        login({ ...user, streamToken: newToken }); // Met à jour le contexte utilisateur
-      }
-
-      // Connecter l'utilisateur à GetStream
-      if (!client.user) {
-        await client.connectUser(
-          {
-            id: user.uid,
-            name: user.username,
-            image: `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
-          },
-          user.streamToken
-        );
-      }
-
-      // Vérifier ou créer le canal
-      const channelId = [user.uid, friend.id].sort().join('-'); // ID unique basé sur les deux utilisateurs
+      const channelId = [user.uid, friend.id].sort().join('-');
       const chatChannel = client.channel('messaging', channelId, {
         name: `Chat with ${friend.username}`,
-        members: [user.uid, friend.id], // Ajouter les deux utilisateurs comme membres
+        members: [user.uid, friend.id],
       });
 
-      await chatChannel.watch(); // Surveiller ou créer le canal
+      await chatChannel.watch();
       router.push({
         pathname: `/chat/${channelId}`,
         params: { title: friend.username },
       });
+
+      // Réinitialiser le compteur de messages non lus pour ce chat
+      setUnreadCounts((prev) => ({ ...prev, [friend.id]: 0 }));
     } catch (error) {
       console.error('Erreur lors de la création du canal :', error);
     }
   };
 
+  const renderSeparator = () => (
+    <View
+      style={[
+        styles.separator,
+        { backgroundColor: currentColors.separator },
+      ]}
+    />
+  );
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mes Amis</Text>
-      <FlatList
-        data={friends}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.friendItem}
-            onPress={() => handleChat(item)} // Naviguer ou créer un chat
-          >
-            <Image source={{ uri: item.avatar }} style={styles.avatar} />
-            <Text style={styles.username}>{item.username}</Text>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]}>
+      <View style={styles.container}>
+        <FlatList
+          data={friends}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.friendItem}
+              onPress={() => handleChat(item)}
+            >
+              <Image source={{ uri: item.avatar }} style={styles.avatar} />
+              <Text style={[styles.username, { color: currentColors.text }]}>
+                {item.username}
+              </Text>
+              {unreadCounts[item.id] > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadText}>{unreadCounts[item.id]}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
+          ItemSeparatorComponent={renderSeparator}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
   },
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
   avatar: {
     width: 40,
@@ -123,5 +153,22 @@ const styles = StyleSheet.create({
   username: {
     flex: 1,
     fontSize: 16,
+  },
+  separator: {
+    height: 1,
+    marginVertical: 5,
+  },
+  unreadBadge: {
+    backgroundColor: 'red',
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unreadText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

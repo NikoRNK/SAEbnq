@@ -44,17 +44,23 @@ export default function Chat() {
         setChannel(chatChannel);
 
         // Charger les messages existants
-        const loadedMessages = chatChannel.state.messages.map((msg: any) => ({
-          _id: msg.id,
-          text: msg.text,
-          createdAt: new Date(msg.created_at),
-          user: {
-            _id: msg.user.id,
-            name: msg.user.name,
-            avatar: msg.user.image,
-          },
-        }));
+        const loadedMessages = chatChannel.state.messages
+          .map((msg: any) => ({
+            _id: msg.id,
+            text: msg.text,
+            createdAt: new Date(msg.created_at),
+            user: {
+              _id: msg.user.id,
+              name: msg.user.name,
+              avatar: msg.user.image,
+            },
+          }))
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Trier les messages par date décroissante
+
         setMessages(loadedMessages);
+
+        // Marquer les messages comme lus
+        await chatChannel.markRead();
 
         // Écouter les nouveaux messages en temps réel
         chatChannel.on('message.new', (event: any) => {
@@ -68,7 +74,9 @@ export default function Chat() {
               avatar: event.message.user.image,
             },
           };
-          setMessages((prevMessages) => GiftedChat.append(prevMessages, [newMessage]));
+          setMessages((prevMessages) =>
+            GiftedChat.append(prevMessages, [newMessage])
+          );
         });
       } catch (error) {
         console.error('Erreur lors de la configuration du chat :', error);

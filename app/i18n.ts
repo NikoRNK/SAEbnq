@@ -33,6 +33,18 @@ const resources = {
         success: "You have successfully logged out.",
         error: "Error during logout.",
       },
+      friends: {
+        title: "Friends",
+        tabBarLabel: "Friends"
+      },
+      messages: {
+        title: "Chats",
+        tabBarLabel: "Chats"
+      },
+      profile: {
+        title: "Profile",
+        tabBarLabel: "Me"
+      },
     },
   },
   fr: {
@@ -64,6 +76,18 @@ const resources = {
         button: "Déconnexion",
         success: "Vous avez été déconnecté avec succès.",
         error: "Erreur lors de la déconnexion.",
+      },
+      friends: {
+        title: "Amis",
+        tabBarLabel: "Amis"
+      },
+      messages: {
+        title: "Discussions",
+        tabBarLabel: "Discussions"
+      },
+      profile: {
+        title: "Profil",
+        tabBarLabel: "Moi"
       },
     },
   },

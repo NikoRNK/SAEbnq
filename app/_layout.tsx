@@ -34,11 +34,15 @@ export default function RootLayout() {
     <TranslationProvider>
       <AuthProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <StatusBar
+            style={colorScheme === 'dark' ? 'light' : 'dark'} // Ajuster le style selon le mode
+            backgroundColor={colorScheme === 'dark' ? '#111111' : '#F9F9F9'} // Fond dynamique
+            animated={true} // Transition animée
+          />
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
-          <StatusBar style="auto" />
         </ThemeProvider>
       </AuthProvider>
     </TranslationProvider>
