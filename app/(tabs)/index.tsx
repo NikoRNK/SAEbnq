@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebaseConfig';
 import { getDoc, doc } from 'firebase/firestore';
 import { client } from '@/streamConfig';
+import { fetchStreamToken } from '@/utils/stream';
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, login } = useAuth(); // Récupère `login` pour mettre à jour le contexte
   const [friends, setFriends] = useState([]);
   const router = useRouter();
 
@@ -41,6 +42,25 @@ export default function Home() {
     if (!user) return;
 
     try {
+      // Vérifier si un token est disponible
+      if (!user.streamToken) {
+        console.log('Aucun token Stream trouvé. Récupération d\'un nouveau token...');
+        const newToken = await fetchStreamToken(user.uid);
+        login({ ...user, streamToken: newToken }); // Met à jour le contexte utilisateur
+      }
+
+      // Connecter l'utilisateur à GetStream
+      if (!client.user) {
+        await client.connectUser(
+          {
+            id: user.uid,
+            name: user.username,
+            image: `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
+          },
+          user.streamToken
+        );
+      }
+
       // Vérifier ou créer le canal
       const channelId = [user.uid, friend.id].sort().join('-'); // ID unique basé sur les deux utilisateurs
       const chatChannel = client.channel('messaging', channelId, {

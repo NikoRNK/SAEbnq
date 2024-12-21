@@ -9,7 +9,7 @@ export default function Chat() {
   const { id, title } = useLocalSearchParams<{ id: string; title: string }>(); // Récupérer les paramètres
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [channel, setChannel] = useState<any>(null); // Référence au canal Stream
-  const { user, loading, streamToken } = useAuth();
+  const { user, loading } = useAuth(); // Récupérer `user` et `loading`
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -18,9 +18,10 @@ export default function Chat() {
         title: title,
       });
     }
+
     const setupChat = async () => {
       try {
-        if (!user || !streamToken) {
+        if (!user || !user.streamToken) {
           console.error('Utilisateur ou token Stream non disponible.');
           return;
         }
@@ -33,7 +34,7 @@ export default function Chat() {
               name: user.username,
               image: `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
             },
-            streamToken
+            user.streamToken // Utiliser `streamToken` depuis l'utilisateur
           );
         }
 
@@ -84,7 +85,7 @@ export default function Chat() {
         client.disconnectUser();
       }
     };
-  }, [id, user, streamToken, loading]);
+  }, [id, user, loading]);
 
   const handleSend = async (newMessages: IMessage[] = []) => {
     try {
@@ -111,9 +112,9 @@ export default function Chat() {
         messages={messages}
         onSend={(messages) => handleSend(messages)}
         user={{
-          _id: user.uid,
-          name: user.username,
-          avatar: `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
+          _id: user?.uid,
+          name: user?.username,
+          avatar: `https://getstream.io/random_svg/?id=${user?.uid}&name=${user?.username}`,
         }}
       />
     </KeyboardAvoidingView>
