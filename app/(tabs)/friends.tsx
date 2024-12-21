@@ -10,7 +10,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext'; // Contexte pour l'utilisateur connecté
+import { useAuth } from '@/contexts/AuthContext';
 import {
   doc,
   getDoc,
@@ -19,21 +19,24 @@ import {
   arrayRemove,
   collection,
   getDocs,
-  query,
-  where,
 } from 'firebase/firestore';
-import { db } from '@/firebaseConfig'; // Remplacez firestore par db
+import { db } from '@/firebaseConfig';
+import { useColorScheme } from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { useTranslation } from 'react-i18next';
 
 export default function Friends() {
-  const { user } = useAuth(); // L'utilisateur connecté
+  const { user } = useAuth();
   const [friends, setFriends] = useState([]);
   const [users, setUsers] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
   const [search, setSearch] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const colorScheme = useColorScheme();
+  const currentColors = Colors[colorScheme || 'light'];
+  const { t } = useTranslation();
 
-  // Récupérer les amis de l'utilisateur
   useEffect(() => {
     fetchFriends();
     fetchFriendRequests();
@@ -55,13 +58,12 @@ export default function Friends() {
         setFriends(friendsList);
       }
     } catch (error) {
-      console.error('Erreur lors de la récupération des amis :', error);
+      console.error(t('friends.fetchError'), error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Récupérer les demandes d'amis
   const fetchFriendRequests = async () => {
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -77,29 +79,26 @@ export default function Friends() {
         setFriendRequests(requestsList);
       }
     } catch (error) {
-      console.error('Erreur lors de la récupération des demandes d\'amis :', error);
+      console.error(t('friends.requestsFetchError'), error);
     }
   };
 
-  // Récupérer tous les utilisateurs, sauf l'utilisateur connecté
   const fetchAllUsers = async () => {
     try {
       const usersCollection = collection(db, 'users');
       const usersSnapshot = await getDocs(usersCollection);
 
       const allUsers = usersSnapshot.docs.map((doc) => ({
-        id: doc.id, // ID du document
-        ...doc.data(), // Les données du document
+        id: doc.id,
+        ...doc.data(),
       }));
 
-      // Exclure l'utilisateur connecté
       setUsers(allUsers.filter((u) => u.id !== user.uid));
     } catch (error) {
-      console.error('Erreur lors de la récupération des utilisateurs :', error);
+      console.error(t('friends.usersFetchError'), error);
     }
   };
 
-  // Envoyer une demande d'ami
   const handleAddFriend = async (friendId) => {
     try {
       const friendDocRef = doc(db, 'users', friendId);
@@ -107,20 +106,18 @@ export default function Friends() {
         friendRequests: arrayUnion(user.uid),
       });
 
-      Alert.alert('Demande envoyée', 'Votre demande d\'ami a été envoyée.');
+      Alert.alert(t('friends.requestSentTitle'), t('friends.requestSentMessage'));
       fetchAllUsers();
     } catch (error) {
-      console.error('Erreur lors de l\'envoi de la demande d\'ami :', error);
+      console.error(t('friends.addFriendError'), error);
     }
   };
 
-  // Accepter une demande d'ami
   const handleAcceptFriend = async (friendId) => {
     try {
       const currentUserDocRef = doc(db, 'users', user.uid);
       const friendDocRef = doc(db, 'users', friendId);
 
-      // Mise à jour de la liste des amis
       await updateDoc(currentUserDocRef, {
         friends: arrayUnion(friendId),
         friendRequests: arrayRemove(friendId),
@@ -130,71 +127,77 @@ export default function Friends() {
         friends: arrayUnion(user.uid),
       });
 
-      Alert.alert('Ami ajouté', 'Vous avez accepté la demande.');
+      Alert.alert(t('friends.friendAddedTitle'), t('friends.friendAddedMessage'));
       fetchFriends();
       fetchFriendRequests();
     } catch (error) {
-      console.error('Erreur lors de l\'acceptation de la demande d\'ami :', error);
+      console.error(t('friends.acceptFriendError'), error);
     }
   };
 
-  // Filtrer les utilisateurs pour la recherche
   const filteredUsers = users.filter(
     (u) =>
       u.username.toLowerCase().includes(search.toLowerCase()) &&
-      !friends.some((friend) => friend.id === u.id) // Vérifie si l'utilisateur n'est pas déjà un ami
+      !friends.some((friend) => friend.id === u.id)
   );
-  
+
+  const renderSeparator = () => (
+    <View style={[styles.separator, { backgroundColor: currentColors.separator }]} />
+  );
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mes Amis</Text>
+    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
       <FlatList
         data={friends}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.friendItem}>
-            <Image source={{ uri: item.avatar }} style={styles.avatar} onError={() => console.log(`Erreur de chargement pour ${item.avatar}`)}/>
-            <Text style={styles.username}>{item.username}</Text>
+            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            <Text style={[styles.username, { color: currentColors.text }]}>{item.username}</Text>
           </View>
         )}
         refreshing={loading}
         onRefresh={fetchFriends}
+        ItemSeparatorComponent={renderSeparator}
+        ListHeaderComponent={renderSeparator}
+        ListFooterComponent={renderSeparator}
       />
 
-      <Text style={styles.title}>Demandes d'amis</Text>
+      <Text style={[styles.title, { color: currentColors.text }]}>{t('friends.requestsTitle')}</Text>
       <FlatList
         data={friendRequests}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.friendItem}>
             <Image source={{ uri: item.avatar }} style={styles.avatar} />
-            <Text style={styles.username}>{item.username}</Text>
+            <Text style={[styles.username, { color: currentColors.text }]}>{item.username}</Text>
             <TouchableOpacity
               onPress={() => handleAcceptFriend(item.id)}
-              style={styles.acceptButton}
+              style={[styles.acceptButton, { backgroundColor: currentColors.tint }]}
             >
-              <Text style={styles.acceptButtonText}>Accepter</Text>
+              <Text style={[styles.acceptButtonText, { color: currentColors.text }]}>{t('friends.accept')}</Text>
             </TouchableOpacity>
           </View>
         )}
+        ItemSeparatorComponent={renderSeparator}
       />
 
       <TouchableOpacity
-        style={styles.addButton}
+        style={[styles.addButton, { backgroundColor: currentColors.addButton }]}
         onPress={() => {
           setModalVisible(true);
           fetchAllUsers();
         }}
       >
-        <Text style={styles.addButtonText}>Ajouter des amis</Text>
+        <Text style={[styles.addButtonText, { color: currentColors.text }]}>{t('friends.addFriend')}</Text>
       </TouchableOpacity>
 
-      {/* Modal pour afficher la liste des utilisateurs */}
       <Modal visible={modalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { backgroundColor: currentColors.background }]}>
           <TextInput
-            style={styles.searchInput}
-            placeholder="Rechercher un utilisateur"
+            style={[styles.searchInput, { borderColor: currentColors.text, color: currentColors.text }]}
+            placeholder={t('friends.searchPlaceholder')}
+            placeholderTextColor={currentColors.icon}
             value={search}
             onChangeText={setSearch}
           />
@@ -204,21 +207,22 @@ export default function Friends() {
             renderItem={({ item }) => (
               <View style={styles.userItem}>
                 <Image source={{ uri: item.avatar }} style={styles.avatar} />
-                <Text style={styles.username}>{item.username}</Text>
+                <Text style={[styles.username, { color: currentColors.text }]}>{item.username}</Text>
                 <TouchableOpacity
                   onPress={() => handleAddFriend(item.id)}
-                  style={styles.addFriendButton}
+                  style={[styles.addFriendButton, { backgroundColor: currentColors.tint }]}
                 >
-                  <Text style={styles.addFriendButtonText}>Ajouter</Text>
+                  <Text style={[styles.addFriendButtonText, { color: currentColors.text }]}>{t('friends.add')}</Text>
                 </TouchableOpacity>
               </View>
             )}
+            ItemSeparatorComponent={renderSeparator}
           />
           <TouchableOpacity
-            style={styles.closeButton}
+            style={[styles.closeButton, { backgroundColor: currentColors.addButton }]}
             onPress={() => setModalVisible(false)}
           >
-            <Text style={styles.closeButtonText}>Fermer</Text>
+            <Text style={[styles.closeButtonText, { color: currentColors.text }]}>{t('friends.close')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -229,18 +233,12 @@ export default function Friends() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
   },
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
   },
   userItem: {
     flexDirection: 'row',
@@ -258,53 +256,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   addButton: {
-    backgroundColor: '#0a7ea4',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
   },
   addButtonText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
   },
   searchInput: {
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 5,
     padding: 10,
     marginBottom: 10,
   },
   addFriendButton: {
-    backgroundColor: '#0a7ea4',
     padding: 10,
     borderRadius: 5,
   },
   addFriendButtonText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
   closeButton: {
-    backgroundColor: '#f44336',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
   },
   closeButtonText: {
-    color: '#fff',
     fontWeight: 'bold',
   },
   acceptButton: {
-    backgroundColor: '#0a7ea4',
     padding: 10,
     borderRadius: 5,
   },
   acceptButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  separator: {
+    height: 1,
   },
 });

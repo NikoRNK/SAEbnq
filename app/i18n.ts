@@ -26,7 +26,7 @@ const resources = {
         success: "Registration successful!",
         error: "Registration error",
         usernameRequired: "Username is required.",
-        usernameError: "Username error"
+        usernameError: "Username error",
       },
       logout: {
         button: "Log Out",
@@ -35,15 +35,36 @@ const resources = {
       },
       friends: {
         title: "Friends",
-        tabBarLabel: "Friends"
+        tabBarLabel: "Friends",
+        fetchError: "Error fetching friends.",
+        requestsTitle: "Friend Requests",
+        accept: "Accept",
+        addFriend: "Add Friend",
+        requestSentTitle: "Request Sent",
+        requestSentMessage: "Your friend request has been sent.",
+        friendAddedTitle: "Friend Added",
+        friendAddedMessage: "You have successfully added this friend.",
+        searchPlaceholder: "Search a user",
+        close: "Close",
       },
       messages: {
         title: "Chats",
-        tabBarLabel: "Chats"
+        tabBarLabel: "Chats",
+        fetchError: "Error fetching messages.",
+        typePlaceholder: "Type a message...",
       },
       profile: {
         title: "Profile",
-        tabBarLabel: "Me"
+        tabBarLabel: "Me",
+      },
+      common: {
+        close: "Close",
+        searchPlaceholder: "Search...",
+      },
+      chat: {
+        placeholder: "Type a message",
+        sendButton: "Send",
+        loadEarlierMessages: "Load earlier messages",
       },
     },
   },
@@ -70,7 +91,7 @@ const resources = {
         success: "Inscription réussie !",
         error: "Erreur d'inscription",
         usernameRequired: "Le nom d'utilisateur est requis.",
-        usernameError: "Erreur de nom d'utilisateur"
+        usernameError: "Erreur de nom d'utilisateur",
       },
       logout: {
         button: "Déconnexion",
@@ -79,15 +100,36 @@ const resources = {
       },
       friends: {
         title: "Amis",
-        tabBarLabel: "Amis"
+        tabBarLabel: "Amis",
+        fetchError: "Erreur lors de la récupération des amis.",
+        requestsTitle: "Demandes d'amis",
+        accept: "Accepter",
+        addFriend: "Ajouter un ami",
+        requestSentTitle: "Demande envoyée",
+        requestSentMessage: "Votre demande d'ami a été envoyée.",
+        friendAddedTitle: "Ami ajouté",
+        friendAddedMessage: "Vous avez ajouté cet ami avec succès.",
+        searchPlaceholder: "Rechercher un utilisateur",
+        close: "Fermer",
       },
       messages: {
         title: "Discussions",
-        tabBarLabel: "Discussions"
+        tabBarLabel: "Discussions",
+        fetchError: "Erreur lors de la récupération des messages.",
+        typePlaceholder: "Écrire un message...",
       },
       profile: {
         title: "Profil",
-        tabBarLabel: "Moi"
+        tabBarLabel: "Moi",
+      },
+      common: {
+        close: "Fermer",
+        searchPlaceholder: "Rechercher...",
+      },
+      chat: {
+        placeholder: "Écrivez un message",
+        sendButton: "Envoyer",
+        loadEarlierMessages: "Charger les messages précédents"
       },
     },
   },
@@ -95,10 +137,10 @@ const resources = {
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: Localization.locale.split('-')[0], // Langue détectée
+  lng: Localization.locale.split('-')[0],
   fallbackLng: 'en',
   interpolation: {
-    escapeValue: false, // Pas besoin d'échapper dans React
+    escapeValue: false,
   },
 });
 

@@ -1,8 +1,3 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
@@ -12,21 +7,41 @@ export const Colors = {
     tabBackground: '#F9F9F9',
     headerBackground: '#F9F9F9',
     background: '#fff',
+    cardBackground: '#f5f5f5', // Nouveau: couleur de fond des cartes
     tint: tintColorLight,
     icon: '#687076',
     separator: '#bdbdbd',
+    error: '#d9534f', // Couleur des erreurs
+    success: '#5cb85c', // Couleur des succès
+    warning: '#f0ad4e', // Couleur des avertissements
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    buttonBackground: '#0a7ea4', // Couleur de fond des boutons
+    buttonText: '#fff', // Couleur du texte des boutons
+    addButton: '#111111',
+    messageBackground: '#e6f7ff',
+    inputBackground: '#f5f5f5',
+    bubbleRightBackground: '#0a7ea4',
   },
   dark: {
     text: '#ECEDEE',
     tabBackground: '#111111',
     headerBackground: '#111111',
     background: '#151718',
+    cardBackground: '#1f1f1f', // Nouveau: couleur de fond des cartes
     tint: tintColorDark,
     icon: '#9BA1A6',
     separator: '#525151',
+    error: '#d9534f', // Couleur des erreurs
+    success: '#5cb85c', // Couleur des succès
+    warning: '#f0ad4e', // Couleur des avertissements
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    buttonBackground: '#444', // Couleur de fond des boutons
+    buttonText: '#fff', // Couleur du texte des boutons
+    addButton: '#111111',
+    messageBackground: '#e6f7ff',
+    inputBackground: '#f5f5f5',
+    bubbleRightBackground: '#0a7ea4',
   },
 };

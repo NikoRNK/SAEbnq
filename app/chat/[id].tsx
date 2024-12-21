@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Platform, KeyboardAvoidingView } from 'react-native';
-import { GiftedChat, IMessage } from 'react-native-gifted-chat';
+import { View, StyleSheet, Platform, KeyboardAvoidingView, TouchableOpacity, Text } from 'react-native';
+import { GiftedChat, IMessage, Send } from 'react-native-gifted-chat';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { client } from '@/streamConfig'; // Configuration GetStream
 import { useAuth } from '@/contexts/AuthContext';
+import { useColorScheme } from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { useTranslation } from 'react-i18next';
+import Feather from '@expo/vector-icons/Feather';
 
 export default function Chat() {
   const { id, title } = useLocalSearchParams<{ id: string; title: string }>(); // Récupérer les paramètres
@@ -11,6 +15,9 @@ export default function Chat() {
   const [channel, setChannel] = useState<any>(null); // Référence au canal Stream
   const { user, loading } = useAuth(); // Récupérer `user` et `loading`
   const navigation = useNavigation();
+  const colorScheme = useColorScheme();
+  const currentColors = Colors[colorScheme || 'light'];
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (title) {
@@ -52,7 +59,7 @@ export default function Chat() {
             user: {
               _id: msg.user.id,
               name: msg.user.name,
-              avatar: msg.user.image,
+              avatar: msg.image,
             },
           }))
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Trier les messages par date décroissante
@@ -111,27 +118,41 @@ export default function Chat() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      <GiftedChat
-        messages={messages}
-        onSend={(messages) => handleSend(messages)}
-        user={{
-          _id: user?.uid,
-          name: user?.username,
-          avatar: `https://getstream.io/random_svg/?id=${user?.uid}&name=${user?.username}`,
-        }}
-      />
-    </KeyboardAvoidingView>
+    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <GiftedChat
+          messages={messages}
+          onSend={(messages) => handleSend(messages)}
+          user={{
+            _id: user?.uid,
+            name: user?.username,
+            avatar: `https://getstream.io/random_svg/?id=${user?.uid}&name=${user?.username}`,
+          }}
+          placeholder={t('chat.placeholder')} // Utilise i18n pour le texte
+        />
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+  },
+  sendButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

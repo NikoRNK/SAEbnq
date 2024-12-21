@@ -14,6 +14,7 @@ export default function Home() {
   const { user, login } = useAuth();
   const [friends, setFriends] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [lastMessages, setLastMessages] = useState<Record<string, string>>({});
   const router = useRouter();
   const colorScheme = useColorScheme();
   const currentColors = Colors[colorScheme || 'light'];
@@ -52,15 +53,35 @@ export default function Home() {
             );
           }
 
-          // Récupérer les messages non lus pour chaque ami
+          // Récupérer les messages non lus et le dernier message pour chaque ami
           const unreadCountsTemp: Record<string, number> = {};
+          const lastMessagesTemp: Record<string, string> = {};
           for (const friend of friendsList) {
             const channelId = [user.uid, friend.id].sort().join('-');
             const channel = client.channel('messaging', channelId);
             await channel.watch();
+
             unreadCountsTemp[friend.id] = channel.countUnread();
+            const messages = channel.state.messages;
+            if (messages.length > 0) {
+              lastMessagesTemp[friend.id] = messages[messages.length - 1].text;
+            } else {
+              lastMessagesTemp[friend.id] = 'No messages yet.';
+            }
           }
           setUnreadCounts(unreadCountsTemp);
+
+          // Trier les amis par date du dernier message
+          const sortedFriends = friendsList.sort((a, b) => {
+            const channelA = client.channel('messaging', [user.uid, a.id].sort().join('-'));
+            const channelB = client.channel('messaging', [user.uid, b.id].sort().join('-'));
+            const lastMessageA = channelA.state.messages.at(-1)?.created_at || new Date(0);
+            const lastMessageB = channelB.state.messages.at(-1)?.created_at || new Date(0);
+            return new Date(lastMessageB).getTime() - new Date(lastMessageA).getTime();
+          });
+          setFriends(sortedFriends);
+
+          setLastMessages(lastMessagesTemp);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des amis :', error);
@@ -94,54 +115,50 @@ export default function Home() {
   };
 
   const renderSeparator = () => (
-    <View
-      style={[
-        styles.separator,
-        { backgroundColor: currentColors.separator },
-      ]}
-    />
+    <View style={[styles.separator, { backgroundColor: currentColors.separator }]} />
   );
 
+  const renderTopSeparator = () => <View style={[styles.separator, { backgroundColor: currentColors.separator }]} />;
+  const renderBottomSeparator = () => <View style={[styles.separator, { backgroundColor: currentColors.separator }]} />;
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: currentColors.background }]}>
-      <View style={styles.container}>
-        <FlatList
-          data={friends}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.friendItem}
-              onPress={() => handleChat(item)}
-            >
-              <Image source={{ uri: item.avatar }} style={styles.avatar} />
-              <Text style={[styles.username, { color: currentColors.text }]}>
-                {item.username}
-              </Text>
-              {unreadCounts[item.id] > 0 && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>{unreadCounts[item.id]}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
-          ItemSeparatorComponent={renderSeparator}
-        />
-      </View>
-    </SafeAreaView>
+    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
+      <FlatList
+        data={friends}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderTopSeparator} // Séparateur en haut
+        ListFooterComponent={renderBottomSeparator} // Séparateur en bas
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.friendItem}
+            onPress={() => handleChat(item)}
+          >
+            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            <View style={styles.messageContainer}>
+              <Text style={[styles.username, { color: currentColors.text }]}>{item.username}</Text>
+              <Text style={[styles.lastMessage, { color: currentColors.icon }]}>{lastMessages[item.id]}</Text>
+            </View>
+            {unreadCounts[item.id] > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>{unreadCounts[item.id]}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+        ItemSeparatorComponent={renderSeparator}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
   container: {
     flex: 1,
   },
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 5,
+    paddingVertical: 10,
     paddingHorizontal: 10,
   },
   avatar: {
@@ -150,13 +167,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
-  username: {
+  messageContainer: {
     flex: 1,
+  },
+  username: {
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  lastMessage: {
+    fontSize: 14,
+    marginTop: 4,
   },
   separator: {
     height: 1,
-    marginVertical: 5,
   },
   unreadBadge: {
     backgroundColor: 'red',
