@@ -4,9 +4,9 @@ const tintColorDark = '#fff';
 export const Colors = {
   light: {
     text: '#11181C',
-    tabBackground: '#F9F9F9',
-    headerBackground: '#F9F9F9',
-    background: '#fff',
+    tabBackground: '#FFF',
+    headerBackground: '#FFF',
+    background: '#F9F9F9',
     cardBackground: '#f5f5f5', // Nouveau: couleur de fond des cartes
     tint: tintColorLight,
     icon: '#687076',
@@ -17,8 +17,8 @@ export const Colors = {
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
     buttonBackground: '#0a7ea4', // Couleur de fond des boutons
-    buttonText: '#fff', // Couleur du texte des boutons
-    addButton: '#111111',
+    buttonText: '#11181C', // Couleur du texte des boutons
+    addButton: '#FFF',
     messageBackground: '#e6f7ff',
     inputBackground: '#f5f5f5',
     bubbleRightBackground: '#0a7ea4',

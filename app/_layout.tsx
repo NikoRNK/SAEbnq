@@ -6,7 +6,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-
 import { useColorScheme } from '@/hooks/useColorScheme';
 import TranslationProvider from '../TranslationProvider'; // Assurez-vous d'avoir ce fichier
 import { AuthProvider } from '@/contexts/AuthContext'; // Import du AuthProvider
@@ -43,6 +42,20 @@ export default function RootLayout() {
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
+            <Stack.Screen
+              name="login"
+              options={{
+                headerShown: false,
+                gestureEnabled: false, // Désactive le swipe back
+              }}
+            />
+            <Stack.Screen
+              name="register"
+              options={{
+                headerShown: false,
+                gestureEnabled: false, // Désactive le swipe back
+              }}
+            />
           </Stack>
         </ThemeProvider>
       </AuthProvider>

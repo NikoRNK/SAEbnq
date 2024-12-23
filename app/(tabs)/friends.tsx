@@ -159,7 +159,6 @@ export default function Friends() {
         refreshing={loading}
         onRefresh={fetchFriends}
         ItemSeparatorComponent={renderSeparator}
-        ListHeaderComponent={renderSeparator}
         ListFooterComponent={renderSeparator}
       />
 
@@ -210,13 +209,15 @@ export default function Friends() {
                 <Text style={[styles.username, { color: currentColors.text }]}>{item.username}</Text>
                 <TouchableOpacity
                   onPress={() => handleAddFriend(item.id)}
-                  style={[styles.addFriendButton, { backgroundColor: currentColors.tint }]}
+                  style={[styles.addFriendButton, { backgroundColor: currentColors.addButton }]}
                 >
                   <Text style={[styles.addFriendButtonText, { color: currentColors.text }]}>{t('friends.add')}</Text>
                 </TouchableOpacity>
               </View>
             )}
             ItemSeparatorComponent={renderSeparator}
+            ListFooterComponent={() => <View style={[styles.separator, { backgroundColor: currentColors.separator }]} />} // Ajouter un séparateur en bas
+            ListHeaderComponent={() => <View style={[styles.separator, { backgroundColor: currentColors.separator }]} />} // Ajouter un séparateur en bas
           />
           <TouchableOpacity
             style={[styles.closeButton, { backgroundColor: currentColors.addButton }]}
@@ -243,7 +244,8 @@ const styles = StyleSheet.create({
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginVertical: 10,
+    marginHorizontal: 10,
   },
   avatar: {
     width: 40,
@@ -257,6 +259,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     padding: 15,
+    margin: 10,
     borderRadius: 5,
     alignItems: 'center',
   },
@@ -265,13 +268,12 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    padding: 20,
   },
   searchInput: {
     borderWidth: 1,
     borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    padding: 15,
+    margin: 10,
   },
   addFriendButton: {
     padding: 10,
