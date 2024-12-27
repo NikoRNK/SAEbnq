@@ -4,6 +4,8 @@ const tintColorDark = '#fff';
 export const Colors = {
   light: {
     text: '#11181C',
+    login: '#ECEDEE',
+    register: '#ECEDEE',
     tabBackground: '#FFF',
     headerBackground: '#FFF',
     background: '#F9F9F9',
@@ -25,6 +27,8 @@ export const Colors = {
   },
   dark: {
     text: '#ECEDEE',
+    login: '#ECEDEE',
+    register: '#ECEDEE',
     tabBackground: '#111111',
     headerBackground: '#111111',
     background: '#151718',

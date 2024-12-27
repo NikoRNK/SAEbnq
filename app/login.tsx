@@ -117,7 +117,7 @@ export default function LoginScreen() {
             end={{ x: 0, y: 0 }}
             style={styles.buttonGradient}
           >
-            <Text style={[styles.buttonText, { color: colors.buttonText }]}>{t('login.button')}</Text>
+            <Text style={[styles.buttonText, { color: colors.login }]}>{t('login.button')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 

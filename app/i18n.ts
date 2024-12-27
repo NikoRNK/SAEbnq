@@ -43,6 +43,8 @@ const resources = {
         button: "Log Out",
         success: "You have successfully logged out.",
         error: "Error during logout.",
+        confirmTitle: "Confirm Logout",
+        confirmMessage: "Are you sure you want to log out?",
       },
       friends: {
         title: "Friends",
@@ -66,8 +68,17 @@ const resources = {
         typePlaceholder: "Type a message...",
       },
       profile: {
+        langue: "Change language",
+        info: "Infos",
+        settings: "Go to settings",
         title: "Profile",
         tabBarLabel: "Me",
+        chooseLanguage: "Choose language",
+        menu: "Menu not dev",
+        success: "Success",
+        error: "Error",
+        descriptionUpdated: "Description updated successfully.",
+        updateError: "Failed to update description. Please try again."
       },
       group: {
         title: "Group Options",
@@ -105,6 +116,8 @@ const resources = {
         close: "Close",
         or: "or",
         searchPlaceholder: "Search...",
+        cancel: "Cancel",
+        confirm: "Confirm",
       },
       chat: {
         placeholder: "Type a message",
@@ -157,6 +170,8 @@ const resources = {
         button: "Déconnexion",
         success: "Vous avez été déconnecté avec succès.",
         error: "Erreur lors de la déconnexion.",
+        confirmTitle: "Déconnexion",
+        confirmMessage: "Êtes-vous sûr de vouloir vous déconnecter ?",
       },
       friends: {
         title: "Amis",
@@ -180,8 +195,17 @@ const resources = {
         typePlaceholder: "Écrire un message...",
       },
       profile: {
+        langue: "Changer de langue",
+        info: "Informations",
+        settings: "Accéder aux paramètres",
         title: "Profil",
         tabBarLabel: "Moi",
+        chooseLanguage: "Choisir une langue",
+        menu: "Menu non dev",
+        success: "Succès",
+        error: "Erreur",
+        descriptionUpdated: "Description mise à jour avec succès.",
+        updateError: "Échec de la mise à jour de la description. Veuillez réessayer."
       },
       group: {
         title: "Options de Groupe",
@@ -219,6 +243,8 @@ const resources = {
         close: "Fermer",
         or: "ou",
         searchPlaceholder: "Rechercher...",
+        cancel: "Retour",
+        confirm: "Confirmer",
       },
       chat: {
         placeholder: "Écrivez un message",

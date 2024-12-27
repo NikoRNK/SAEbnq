@@ -37,28 +37,37 @@ export default function RegisterScreen() {
       Alert.alert(t('register.errorTitle'), t('register.usernameRequired'));
       return;
     }
-
+  
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
+  
+      // Générer l'URL de la photo de profil
+      const profilePictureUrl = `https://getstream.imgix.net/images/random_svg/${username.trim()[0].toUpperCase()}.png`;
+  
+      // Enregistrer l'utilisateur dans Firestore
       await setDoc(doc(db, 'users', user.uid), {
         username: username.trim(),
         email: email.trim(),
+        avatar: profilePictureUrl, // Ajouter la photo de profil
         createdAt: new Date(),
       });
-
+  
       const token = await fetchStreamToken(user.uid);
-
-      login({ username: username.trim(), email: email.trim(), uid: user.uid }, token);
-
+  
+      // Connecter l'utilisateur à l'application
+      login(
+        { username: username.trim(), email: email.trim(), uid: user.uid, avatar: profilePictureUrl },
+        token
+      );
+  
       Alert.alert(t('register.successTitle'), t('register.success'));
       router.replace('/(tabs)');
     } catch (error: any) {
       console.error(t('register.errorTitle'), error);
       Alert.alert(t('register.errorTitle'), error.message);
     }
-  };
+  };  
 
   return (
     <KeyboardAvoidingView
@@ -120,7 +129,7 @@ export default function RegisterScreen() {
             end={{ x: 0, y: 0 }}
             style={styles.buttonGradient}
           >
-            <Text style={[styles.buttonText, { color: colors.buttonText }]}>{t('register.button')}</Text>
+            <Text style={[styles.buttonText, { color: colors.register }]}>{t('register.button')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 

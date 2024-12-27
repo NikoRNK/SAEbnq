@@ -3,53 +3,89 @@ import React from 'react';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { FontAwesome6, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next'; // Importer le hook de traduction
+import { useTranslation } from 'react-i18next';
+import { TouchableOpacity, Alert } from 'react-native'; // Importer Alert pour la confirmation
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebaseConfig';
+import { useRouter } from 'expo-router';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { t } = useTranslation(); // Initialiser i18n pour les traductions
-  const currentColors = Colors[colorScheme || 'light']; // Détecter les couleurs dynamiques
+  const { t } = useTranslation();
+  const currentColors = Colors[colorScheme || 'light'];
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/login');
+    } catch (error: any) {
+      alert(`${t('logout.error')}: ${error.message}`);
+    }
+  };
+
+  const confirmLogout = () => {
+    Alert.alert(
+      t('logout.confirmTitle'), // Titre de la boîte de dialogue
+      t('logout.confirmMessage'), // Message de confirmation
+      [
+        {
+          text: t('common.cancel'), // Texte pour le bouton d'annulation
+          style: 'cancel', // Style du bouton
+        },
+        {
+          text: t('common.confirm'), // Texte pour le bouton de confirmation
+          onPress: handleLogout, // Action à effectuer si l'utilisateur confirme
+        },
+      ]
+    );
+  };
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: currentColors.tint, // Couleur active des icônes dans la TabBar
-        tabBarInactiveTintColor: currentColors.icon, // Couleur inactive des icônes
+        tabBarActiveTintColor: currentColors.tint,
+        tabBarInactiveTintColor: currentColors.icon,
         tabBarStyle: {
-          backgroundColor: currentColors.tabBackground, // Couleur de fond dynamique pour la TabBar
-          borderTopWidth: 0, // Supprimer la bordure si nécessaire
+          backgroundColor: currentColors.tabBackground,
+          borderTopWidth: 0,
         },
         headerShown: true,
         headerStyle: {
-          backgroundColor: currentColors.headerBackground, // Couleur de fond dynamique pour le header
+          backgroundColor: currentColors.headerBackground,
         },
         headerTitleStyle: {
-          color: currentColors.text, // Couleur dynamique du texte dans le header
+          color: currentColors.text,
         },
       }}
     >
       <Tabs.Screen
         name="friends"
         options={{
-          title: t('friends.title'), // Titre du header de l'écran
-          tabBarLabel: t('friends.tabBarLabel'), // Étiquette pour la TabBar
+          title: t('friends.title'),
+          tabBarLabel: t('friends.tabBarLabel'),
           tabBarIcon: ({ color }) => <FontAwesome6 name="users" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
-          title: t('messages.title'), // Titre du header de l'écran
-          tabBarLabel: t('messages.tabBarLabel'), // Étiquette pour la TabBar
+          title: t('messages.title'),
+          tabBarLabel: t('messages.tabBarLabel'),
           tabBarIcon: ({ color }) => <Ionicons name="chatbubble-ellipses-outline" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: t('profile.title'), // Titre du header de l'écran
-          tabBarLabel: t('profile.tabBarLabel'), // Étiquette pour la TabBar
+          title: t('profile.title'),
+          tabBarLabel: t('profile.tabBarLabel'),
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="face-man-profile" size={24} color={color} />,
+          headerRight: () => (
+            <TouchableOpacity onPress={confirmLogout} style={{ paddingRight: 10 }}>
+              <Ionicons name="log-out-outline" size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+            </TouchableOpacity>
+          ),
         }}
       />
     </Tabs>
