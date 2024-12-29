@@ -60,6 +60,12 @@ const resources = {
         searchPlaceholder: "Search a user",
         close: "Close",
         add: "Add",
+        requestPending: "Pending",
+        removeConfirmationTitle: "Confirmation",
+        removeConfirmationMessage: "Do you really want to remove this friend?",
+        friendRemovedTitle: "Friend removed",
+        friendRemovedMessage: "This friend has been removed from your list.",
+        removeFriendErrorMessage: "Unable to remove this friend.",
       },
       messages: {
         title: "Chats",
@@ -118,6 +124,8 @@ const resources = {
         searchPlaceholder: "Search...",
         cancel: "Cancel",
         confirm: "Confirm",
+        delete: "Delete",
+        error: "Error",
       },
       chat: {
         placeholder: "Type a message",
@@ -187,6 +195,12 @@ const resources = {
         searchPlaceholder: "Rechercher un utilisateur",
         close: "Fermer",
         add: "Ajouter",
+        requestPending: "En attente",
+        removeConfirmationTitle: "Confirmation",
+        removeConfirmationMessage: "Voulez-vous vraiment supprimer cet ami ?",
+        friendRemovedTitle: "Ami supprimé",
+        friendRemovedMessage: "Cet ami a été retiré de votre liste.",
+        removeFriendErrorMessage: "Impossible de supprimer cet ami.",
       },
       messages: {
         title: "Discussions",
@@ -245,6 +259,8 @@ const resources = {
         searchPlaceholder: "Rechercher...",
         cancel: "Retour",
         confirm: "Confirmer",
+        delete: "Supprimer",
+        error: "Erreur",
       },
       chat: {
         placeholder: "Écrivez un message",

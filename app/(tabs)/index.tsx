@@ -14,50 +14,57 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebaseConfig';
-import { getDoc, doc } from 'firebase/firestore';
+import { onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { client } from '@/streamConfig';
 import { fetchStreamToken } from '@/utils/stream';
 import { useColorScheme } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import Feather from '@expo/vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
-import i18n from '@/app/i18n'; // Ajustez le chemin si nécessaire
+import i18n from '@/app/i18n';
 
 export default function Home() {
   const { user, login } = useAuth();
   const [friends, setFriends] = useState([]);
   const [discussions, setDiscussions] = useState([]);
-  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-  const [lastMessages, setLastMessages] = useState<Record<string, string>>({});
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [lastMessages, setLastMessages] = useState({});
   const [isGroupModalVisible, setGroupModalVisible] = useState(false);
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [groupName, setGroupName] = useState('');
+  const [isAddFriendsModalVisible, setAddFriendsModalVisible] = useState(false);
+  const [groupToEdit, setGroupToEdit] = useState(null);
+
   const router = useRouter();
   const colorScheme = useColorScheme();
   const currentColors = Colors[colorScheme || 'light'];
   const { t } = useTranslation();
   const [currentTranslations, setCurrentTranslations] = useState(i18n.t);
 
+  // ----- FETCH DISCUSSIONS -----
   const fetchDiscussions = async () => {
     if (!user) return;
 
     try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userData = userDoc.data();
+      // 1. Récupère la fiche utilisateur Firestore
+      const userDocSnap = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDocSnap.data();
 
-      // Récupérer les amis
+      // 2. Récupère la liste d'amis
+      let friendsList: any[] = [];
       if (userData?.friends) {
-        const friendsPromises = userData.friends.map((friendId) =>
+        const friendsPromises = userData.friends.map((friendId: string) =>
           getDoc(doc(db, 'users', friendId))
         );
         const friendsDocs = await Promise.all(friendsPromises);
-        const friendsList = friendsDocs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        friendsList = friendsDocs.map((d) => ({ id: d.id, ...d.data() }));
         setFriends(friendsList);
       }
 
-      // Vérifier ou connecter l'utilisateur à GetStream
+      // 3. Connecte l'utilisateur à Stream (si pas déjà connecté + token manquant)
       if (!user.streamToken) {
         const newToken = await fetchStreamToken(user.uid);
+        // Met à jour le user context pour y ajouter le streamToken
         login({ ...user, streamToken: newToken });
       }
 
@@ -66,46 +73,93 @@ export default function Home() {
           {
             id: user.uid,
             name: user.username,
-            image: user.avatar || `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
+            image:
+              user.avatar ||
+              `https://getstream.io/random_svg/?id=${user.uid}&name=${user.username}`,
           },
           user.streamToken
         );
       }
 
-      // Récupérer les discussions (incluant groupes et chats individuels)
+      // 4. Récupère les canaux existants pour l'utilisateur (distinct = 1-1)
+      const existingChannels = await client.queryChannels({
+        members: { $in: [user.uid] },
+        distinct: true,
+      });
+
+      // 4a. Construit une liste/Set des IDs de channels 1-1 déjà existants
+      //     (en utilisant la convention channelId = "uid1_uid2" triés)
+      const existingOneToOneIds = new Set();
+      existingChannels.forEach((ch) => {
+        const mem = ch.data?.members;
+        if (Array.isArray(mem) && mem.length === 2) {
+          const sortedId = mem.sort().join('_');
+          existingOneToOneIds.add(sortedId);
+        }
+      });
+
+      // 5. Pour chaque ami, si le channel 1-1 n'existe pas déjà, on le crée
+      for (const friend of friendsList) {
+        const channelId = [user.uid, friend.id].sort().join('_');
+        if (!existingOneToOneIds.has(channelId)) {
+          const channel = client.channel('messaging', channelId, {
+            members: [user.uid, friend.id],
+            image:
+              friend.avatar ||
+              `https://getstream.io/random_svg/?id=${channelId}&name=${friend.username}`,
+            created_by: { id: user.uid },
+          });
+          await channel.watch(); // créé s'il n'existe pas et s'abonne
+        }
+      }
+
+      // 6. Maintenant on query à nouveau (ou on réutilise existingChannels + query en plus)
+      //    pour lister tous les canaux, y compris ceux nouvellement créés
       const channels = await client.queryChannels({ members: { $in: [user.uid] } });
 
+      // 7. Prépare les unread counts, lastMessages, etc.
       const unreadCountsTemp: Record<string, number> = {};
       const lastMessagesTemp: Record<string, string> = {};
+
       const discussionsTemp = await Promise.all(
         channels.map(async (channel) => {
+          // 1. Dernier message
           const lastMessage = channel.state.messages.at(-1);
           unreadCountsTemp[channel.id] = channel.countUnread();
-          lastMessagesTemp[channel.id] = lastMessage?.text || currentTranslations('group.noMessages');
-
+          lastMessagesTemp[channel.id] = lastMessage?.text || t('group.noMessages');
+      
+          // 2. Valeurs par défaut (nom et avatar)
           let avatar = `https://getstream.io/random_png/?id=${channel.id}&name=${channel.data.name}`;
           let name = channel.data.name || t('group.unnamedGroup');
-
-          if (Array.isArray(channel.data.members) && channel.data.members.length === 2) {
-            // Récupérer l'autre utilisateur pour les conversations individuelles
-            const otherUserId = channel.data.members.find((id) => id !== user.uid);
+      
+          // 3. Récupération des membres via channel.state.members (c’est un objet, pas un tableau)
+          const membersMap = channel.state?.members || {};
+          const memberIds = Object.keys(membersMap); 
+          // memberIds est un tableau des userIds, ex: ["user1", "user2", ...]
+      
+          // 4. Vérifier si c'est un canal 1‑to‑1
+          if (memberIds.length === 2) {
+            const otherUserId = memberIds.find((m) => m !== user.uid);
             if (otherUserId) {
+              // Aller chercher le doc Firestore de l’autre user
               const otherUserDoc = await getDoc(doc(db, 'users', otherUserId));
-              const otherUserData = otherUserDoc.data();
-              avatar = otherUserData?.avatar || avatar;
-              name = otherUserData?.username || name;
+              if (otherUserDoc.exists()) {
+                const otherUserData = otherUserDoc.data();
+                avatar = otherUserData?.avatar || avatar;
+                name = otherUserData?.username || name;
+              }
             }
           }
-
+      
           return {
             id: channel.id,
             name,
             avatar,
-            isGroup: channel.data.member_count > 2,
+            isGroup: memberIds.length > 2, // ou (channel.data.member_count ?? 0) > 2
             ownerId: channel.data.created_by?.id,
           };
         })
-      );
+      );      
 
       setUnreadCounts(unreadCountsTemp);
       setLastMessages(lastMessagesTemp);
@@ -114,41 +168,94 @@ export default function Home() {
       console.error(t('group.fetchError'), error);
     }
   };
-
+  
   useEffect(() => {
-    // Fetch initial discussions
-    fetchDiscussions();
+    if (!user?.uid) return;
   
-    // Mettre à jour les traductions lorsque la langue change
-    const handleLanguageChange = () => {
-      setCurrentTranslations(() => i18n.t); // Mettre à jour les traductions
-      fetchDiscussions(); // Recharger les données en cas de texte dynamique dépendant de la langue
+    // Dès que le doc utilisateur change (amis en plus, etc.),
+    // on relance fetchDiscussions()
+    const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        fetchDiscussions();
+      }
+    });
+  
+    return () => {
+      unsubscribe();
     };
+  }, [user?.uid]);
   
-    // Ajouter un écouteur pour les changements de langue
+  // ----- EFFET : On fetch + on écoute la langue -----
+  useEffect(() => {
+    fetchDiscussions();
+
+    const handleLanguageChange = () => {
+      setCurrentTranslations(() => i18n.t);
+      // Rechargement si besoin
+      fetchDiscussions();
+    };
+
     i18n.on('languageChanged', handleLanguageChange);
-  
-    // Nettoyage en supprimant l'écouteur pour éviter des comportements inattendus
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  useEffect(() => {
+    if (!client?.user?.id) return;
   
-  const handleChat = async (discussion) => {
+    const handleEvent = (event: any) => {
+      // Déclenche un refresh lorsqu’on reçoit un nouveau message,
+      // lorsqu’un channel est marqué "lu", 
+      // ET lorsqu’on est ajouté à un nouveau channel
+      if (
+        event.type === 'message.new' ||
+        event.type === 'notification.mark_read' ||
+        event.type === 'notification.added_to_channel' ||
+        event.type === 'channel.deleted'
+      ) {
+        fetchDiscussions();
+      }
+    };
+  
+    client.on(handleEvent);
+    return () => {
+      client.off(handleEvent);
+    };
+  }, [client, user]);
+  
+  // ----- EFFET : écouter les events message.new, message.read pour mettre à jour unread -----
+  useEffect(() => {
+    if (!client?.user?.id) return;
+
+    const handleEvent = (event: any) => {
+      if (event.type === 'message.new' || event.type === 'notification.mark_read') {
+        fetchDiscussions();
+      }
+    };
+
+    client.on(handleEvent);
+    return () => {
+      client.off(handleEvent);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client, user]);
+
+  // ----- HANDLERS -----
+  const handleChat = (discussion: any) => {
     router.push({
       pathname: `/chat/${discussion.id}`,
       params: { title: discussion.name },
     });
-
+    // Reset du unread local (visuel)
     setUnreadCounts((prev) => ({ ...prev, [discussion.id]: 0 }));
   };
 
-  const handleGroupLongPress = async (discussion) => {
-    if (!discussion.isGroup) {
-      return;
-    }
-
+  const handleGroupLongPress = async (discussion: any) => {
+    if (!discussion.isGroup) return;
     const isOwner = discussion.ownerId === user.uid;
+
     Alert.alert(
       t('group.title'),
       isOwner ? t('group.ownerOptions') : t('group.memberOptions'),
@@ -191,14 +298,11 @@ export default function Home() {
     );
   };
 
-  const [isAddFriendsModalVisible, setAddFriendsModalVisible] = useState(false);
-  const [groupToEdit, setGroupToEdit] = useState(null);
-
-  const openAddFriendsModal = async (discussion) => {
+  const openAddFriendsModal = async (discussion: any) => {
     try {
       const channel = client.channel('messaging', discussion.id);
       const response = await channel.queryMembers({});
-      const currentMembers = response.members.map((member) => member.user.id);
+      const currentMembers = response.members.map((m: any) => m.user.id);
 
       setGroupToEdit({ ...discussion, members: currentMembers });
       setAddFriendsModalVisible(true);
@@ -213,7 +317,6 @@ export default function Home() {
       Alert.alert(t('group.error'), t('group.noFriendsSelected'));
       return;
     }
-
     try {
       const channel = client.channel('messaging', groupToEdit.id);
       await channel.addMembers(selectedFriends);
@@ -227,12 +330,12 @@ export default function Home() {
     }
   };
 
-  const deleteGroup = async (group) => {
+  const deleteGroup = async (group: any) => {
     const channel = client.channel('messaging', group.id);
     await channel.delete();
   };
 
-  const leaveGroup = async (group) => {
+  const leaveGroup = async (group: any) => {
     const channel = client.channel('messaging', group.id);
     await channel.removeMembers([user.uid]);
   };
@@ -242,7 +345,6 @@ export default function Home() {
       Alert.alert(t('group.error'), t('group.enterGroupName'));
       return;
     }
-
     if (selectedFriends.length === 0) {
       Alert.alert(t('group.error'), t('group.noFriendsSelected'));
       return;
@@ -292,7 +394,9 @@ export default function Home() {
             />
             <View style={styles.messageContainer}>
               <Text style={[styles.username, { color: currentColors.text }]}>{item.name}</Text>
-              <Text style={[styles.lastMessage, { color: currentColors.icon }]}>{lastMessages[item.id]}</Text>
+              <Text style={[styles.lastMessage, { color: currentColors.icon }]}>
+                {lastMessages[item.id]}
+              </Text>
             </View>
             {unreadCounts[item.id] > 0 && (
               <View style={styles.unreadBadge}>
@@ -302,7 +406,9 @@ export default function Home() {
           </TouchableOpacity>
         )}
         ItemSeparatorComponent={renderSeparator}
-        ListFooterComponent={() => <View style={[styles.separator, { backgroundColor: currentColors.separator }]} />}
+        ListFooterComponent={() => (
+          <View style={[styles.separator, { backgroundColor: currentColors.separator }]} />
+        )}
       />
 
       {/* Bouton flottant pour créer un groupe */}
@@ -317,9 +423,14 @@ export default function Home() {
       <Modal visible={isGroupModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, { backgroundColor: currentColors.background }]}>
-            <Text style={[styles.modalTitle, { color: currentColors.text }]}>{t('group.createGroup')}</Text>
+            <Text style={[styles.modalTitle, { color: currentColors.text }]}>
+              {t('group.createGroup')}
+            </Text>
             <TextInput
-              style={[styles.input, { backgroundColor: currentColors.cardBackground, borderColor: currentColors.icon }]}
+              style={[
+                styles.input,
+                { backgroundColor: currentColors.cardBackground, borderColor: currentColors.icon },
+              ]}
               placeholder={t('group.groupNamePlaceholder')}
               placeholderTextColor={currentColors.icon}
               value={groupName}
@@ -332,17 +443,21 @@ export default function Home() {
                 <TouchableOpacity
                   style={[
                     styles.friendItem,
-                    selectedFriends.includes(item.id) && { backgroundColor: currentColors.tint },
+                    selectedFriends.includes(item.id) && {
+                      backgroundColor: currentColors.tint,
+                    },
                   ]}
                   onPress={() =>
                     setSelectedFriends((prev) =>
                       prev.includes(item.id)
-                        ? prev.filter((id) => id !== item.id)
+                        ? prev.filter((f) => f !== item.id)
                         : [...prev, item.id]
                     )
                   }
                 >
-                  <Text style={[styles.username, { color: currentColors.text }]}>{item.username}</Text>
+                  <Text style={[styles.username, { color: currentColors.text }]}>
+                    {item.username}
+                  </Text>
                 </TouchableOpacity>
               )}
             />
@@ -352,11 +467,13 @@ export default function Home() {
         </View>
       </Modal>
 
-      {/* Modal pour ajouter des amis */}
+      {/* Modal pour ajouter des amis dans un groupe */}
       <Modal visible={isAddFriendsModalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, { backgroundColor: currentColors.background }]}>
-            <Text style={[styles.modalTitle, { color: currentColors.text }]}>Ajouter des amis</Text>
+            <Text style={[styles.modalTitle, { color: currentColors.text }]}>
+              {t('group.addFriends')}
+            </Text>
             <FlatList
               data={friends.filter((friend) => !groupToEdit?.members?.includes(friend.id))}
               keyExtractor={(item) => item.id}
@@ -364,23 +481,27 @@ export default function Home() {
                 <TouchableOpacity
                   style={[
                     styles.friendItem,
-                    selectedFriends.includes(item.id) && { backgroundColor: currentColors.tint },
+                    selectedFriends.includes(item.id) && {
+                      backgroundColor: currentColors.tint,
+                    },
                   ]}
                   onPress={() =>
                     setSelectedFriends((prev) =>
                       prev.includes(item.id)
-                        ? prev.filter((id) => id !== item.id)
+                        ? prev.filter((f) => f !== item.id)
                         : [...prev, item.id]
                     )
                   }
                 >
-                  <Text style={[styles.username, { color: currentColors.text }]}>{item.username}</Text>
+                  <Text style={[styles.username, { color: currentColors.text }]}>
+                    {item.username}
+                  </Text>
                 </TouchableOpacity>
               )}
             />
-            <Button title="Ajouter" onPress={addFriendsToGroup} />
+            <Button title={t('group.add')} onPress={addFriendsToGroup} />
             <Button
-              title="Annuler"
+              title={t('common.cancel')}
               onPress={() => setAddFriendsModalVisible(false)}
               color="red"
             />
@@ -391,6 +512,9 @@ export default function Home() {
   );
 }
 
+// ---------------------------------------------------
+// Styles
+// ---------------------------------------------------
 const styles = StyleSheet.create({
   container: {
     flex: 1,
