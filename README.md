@@ -77,8 +77,7 @@ Ce projet est une application React Native basée sur Expo, intégrant un backen
 
 ## 🔧 Auteur
 
-- **Nom :** Yann DCS
-- **Email :** [dcs.yann@gmail.com](mailto\:dcs.yann@gmail.com)
+- **Noms :** Yann DCS, Niko RNK, Michée CRQ, Elodie JDN
 
 ---
 
