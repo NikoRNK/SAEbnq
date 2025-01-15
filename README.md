@@ -43,7 +43,17 @@ Ce projet est une application React Native basée sur Expo, intégrant un backen
 
 4. Configurez vos clés dans les fichiers suivants :
 
-   - Créer un fichier ./.env pour Firebase
+   - Créer un fichier ./.env pour Firebase et ajouter les variables d'environnements
+     ```
+     FIREBASE_API_KEY=YOUR_FIREBASE_API_KEY
+     FIREBASE_AUTH_DOMAIN=YOUR_FIREBASE_AUTH_DOMAIN
+     FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID
+     FIREBASE_STORAGE_BUCKET=YOUR_FIREBASE_STORAGE_BUCKET
+     FIREBASE_MESSAGING_SENDER_ID=YOUR_FIREBASE_MESSAGING_SENDER_ID
+     FIREBASE_APP_ID=YOUR_FIREBASE_APP_ID
+     STREAM_API_KEY=YOUR_STREAM_API_KEY
+     STREAM_API_SECRET=YOUR_STREAM_API_SECRET
+     ```
    - `Sur Vercel configurer les variables d'environnements` pour Stream Chat :
      ```
      STREAM_API_KEY=YOUR_STREAM_API_KEY
@@ -61,7 +71,7 @@ Ce projet est une application React Native basée sur Expo, intégrant un backen
 6. Lancez l'application Expo :
 
    ```bash
-   expo start
+   npx expo start #--tunnel" si l'application ne ce lance pas
    ```
 
 ## 🌐 Déploiement
